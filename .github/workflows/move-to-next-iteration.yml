@@ -17,21 +17,29 @@ jobs:
   move-to-next-iteration:
     name: Move to next iteration
     runs-on: ubuntu-latest
-
+    env:
+      PROJECT_NUMBER: 3
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
     - name: Set iteration values
-      id: set-iterations
       run: |
-        # Use workflow_dispatch inputs if available, otherwise use defaults for schedule runs
-        iteration="${{ github.event.inputs.iteration || 'current' }}"
-        new_iteration="${{ github.event.inputs.new-iteration || 'next' }}"
-        echo "iteration=$iteration" >> $GITHUB_ENV
-        echo "new_iteration=$new_iteration" >> $GITHUB_ENV
+        echo "iteration=${{ github.event.inputs.iteration || 'current' }}" >> $GITHUB_ENV
+        echo "new_iteration=${{ github.event.inputs.new-iteration || 'next' }}" >> $GITHUB_ENV
+
+    - name: Check and create next iteration if necessary
+      env:
+        GH_TOKEN: ${{ secrets.PROJECT_PAT }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      run: |
+        chmod +x ./scripts/move-to-next-iteration/create_next_iteration.sh
+        ./scripts/move-to-next-iteration/create_next_iteration.sh $PROJECT_NUMBER
 
     - uses: blombard/move-to-next-iteration@master
       with:
-        owner: uewtwo
-        number: 10
+        owner: ${{ github.repository_owner }}
+        number: $PROJECT_NUMBER
         token: ${{ secrets.PROJECT_PAT }}
         iteration-field: Iteration
         iteration: ${{ env.iteration }}
