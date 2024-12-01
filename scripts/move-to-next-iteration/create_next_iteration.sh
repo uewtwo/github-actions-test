@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 PROJECT_NUMBER=${1}
 OWNER=${GITHUB_REPOSITORY_OWNER}
@@ -50,11 +50,18 @@ if [[ -z "$project_data" || "$project_data" == "null" ]]; then
 fi
 
 # ユーザーまたは組織のプロジェクト情報を取得
-project_id=$(echo "$project_data" | jq -r '.user.projectV2.id // .organization.projectV2.id')
-iteration_field_id=$(echo "$project_data" | jq -r '.user.projectV2.fields.nodes[0].id // .organization.projectV2.fields.nodes[0].id')
-
+project_id=$(echo "$project_data" \
+  | jq -r '.data.user // .data.organization' \
+  | jq -r '.projectV2.id')
+iteration_field_id=$(echo "$project_data" \
+  | jq -r '.data.user // .data.organization' \
+  | jq -r '.projectV2.fields.nodes[].id | select (.!=null)')
+echo 'project_id: '$project_id
+echo 'iteration_field_id: '$iteration_field_id
 # 最新のイテレーションを取得
-iterations=$(echo "$project_data" | jq -r '.user.projectV2.fields.nodes[0].configuration.iterations // .organization.projectV2.fields.nodes[0].configuration.iterations')
+iterations=$(echo "$project_data" \
+  | jq -r '.data.user // .data.organization' \
+  | jq -r '.projectV2.fields.nodes[].configuration | select(.!=null).iterations')
 
 # イテレーションが存在しない場合の処理
 if [[ -z "$iterations" || "$iterations" == "null" ]]; then
