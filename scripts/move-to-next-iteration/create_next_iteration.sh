@@ -64,12 +64,20 @@ fi
 
 # 最新のイテレーションを取得
 latest_iteration=$(echo "$iterations" | jq -r '.[-1]')
-latest_end_date=$(echo "$latest_iteration" | jq -r '.startDate' | xargs -I{} date -d "{} + $(echo "$latest_iteration" | jq -r '.duration') days" +%Y-%m-%d)
 duration=$(echo "$latest_iteration" | jq -r '.duration')
+echo 'latest_iteration: '$latest_iteration
 
-# 次のイテレーションの開始・終了日を計算
-next_start_date=$(date -d "$latest_end_date" +%Y-%m-%d)
-next_end_date=$(date -d "$next_start_date + $duration days" +%Y-%m-%d)
+# 最新の終了日を取得
+latest_end_date=$(echo "$latest_iteration" | jq -r '.startDate') # e.g. 2000-01-01
+echo 'latest_end_date: '$latest_end_date
+
+# 次のイテレーションの開始日を計算 (最新の終了日 + 1日)
+next_start_date=$(date -d "$latest_end_date + 1 day" +"%Y-%m-%d")
+echo "next_start_date: $next_start_date"
+
+# 次のイテレーションの終了日を計算 (次の開始日 + duration)
+next_end_date=$(date -d "$next_start_date + $duration days" +"%Y-%m-%d")
+echo "next_end_date: $next_end_date"
 next_title="Iteration $next_start_date to $next_end_date"
 
 # 新しいイテレーションを追加する Mutation
