@@ -1,0 +1,39 @@
+on:
+  workflow_dispatch:
+    inputs:
+      iteration:
+        description: 'Iteration to move issues from'
+        required: false
+        default: 'current'
+      new-iteration:
+        description: 'Iteration to move issues to'
+        required: false
+        default: 'next'
+  schedule:
+    # Runs "at 18:00 JST, only on Friday"
+    - cron: '0 9 * * 5'
+
+jobs:
+  move-to-next-iteration:
+    name: Move to next iteration
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set iteration values
+      id: set-iterations
+      run: |
+        # Use workflow_dispatch inputs if available, otherwise use defaults for schedule runs
+        iteration="${{ github.event.inputs.iteration || 'current' }}"
+        new_iteration="${{ github.event.inputs.new-iteration || 'next' }}"
+        echo "iteration=$iteration" >> $GITHUB_ENV
+        echo "new_iteration=$new_iteration" >> $GITHUB_ENV
+
+    - uses: blombard/move-to-next-iteration@master
+      with:
+        owner: uewtwo
+        number: 10
+        token: ${{ secrets.PROJECT_PAT }}
+        iteration-field: Iteration
+        iteration: ${{ env.iteration }}
+        new-iteration: ${{ env.new_iteration }}
+        statuses: 'Backlog,In progress,In review'
